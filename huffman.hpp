@@ -4,14 +4,11 @@
 #include <queue>
 #include <vector>
 
-// Disable the bit stream => std::string dumping methods.
+
 #ifndef HUFFMAN_NO_STD_STRING
     #include <string>
 #endif // HUFFMAN_NO_STD_STRING
 
-// If you provide a custom malloc(), you must also provide a custom free().
-// Note: We never check HUFFMAN_MALLOC's return for null. A custom implementation
-// should just abort with a fatal error if the program runs out of memory.
 #ifndef HUFFMAN_MALLOC
     #define HUFFMAN_MALLOC std::malloc
     #define HUFFMAN_MFREE  std::free
@@ -20,18 +17,13 @@
 namespace huffman
 {
 
-// ========================================================
 
-// The default fatalError() function writes to stderr and aborts.
 #ifndef HUFFMAN_ERROR
     void fatalError(const char * message);
     #define HUFFMAN_USING_DEFAULT_ERROR_HANDLER
     #define HUFFMAN_ERROR(message) ::huffman::fatalError(message)
 #endif // HUFFMAN_ERROR
 
-// ========================================================
-// class Code:
-// ========================================================
 
 class Code final
 {
@@ -106,9 +98,7 @@ private:
     int length;         // Bit position within the bits word to write next. Same as the current length in bits.
 };
 
-// ========================================================
-// class BitStreamWriter:
-// ========================================================
+
 
 class BitStreamWriter final
 {
@@ -145,17 +135,15 @@ private:
     void internalInit();
     static std::uint8_t * allocBytes(int bytesWanted, std::uint8_t * oldPtr, int oldSize);
 
-    std::uint8_t * stream; // Growable buffer to store our bits. Heap allocated & owned by the class instance.
-    int bytesAllocated;    // Current size of heap-allocated stream buffer *in bytes*.
-    int granularity;       // Amount bytesAllocated multiplies by when auto-resizing in appendBit().
-    int currBytePos;       // Current byte being written to, from 0 to bytesAllocated-1.
-    int nextBitPos;        // Bit position within the current byte to access next. 0 to 7.
-    int numBitsWritten;    // Number of bits in use from the stream buffer, not including byte-rounding padding.
+    std::uint8_t * stream; 
+    int bytesAllocated;   
+    int granularity;       
+    int currBytePos;       
+    int nextBitPos;       
+    int numBitsWritten;    
 };
 
-// ========================================================
-// class BitStreamReader:
-// ========================================================
+
 
 class BitStreamReader final
 {
@@ -184,18 +172,18 @@ public:
 
 private:
 
-    const std::uint8_t * stream; // Pointer to the external bit stream. Not owned by the reader.
-    const int sizeInBytes;       // Size of the stream *in bytes*. Might include padding.
-    const int sizeInBits;        // Size of the stream *in bits*, padding *not* include.
-    int currBytePos;             // Current byte being read in the stream.
-    int nextBitPos;              // Bit position within the current byte to access next. 0 to 7.
-    int numBitsRead;             // Total bits read from the stream so far. Never includes byte-rounding padding.
-    Code currCode;               // Current Huffman code being built from the input bit stream.
+    const std::uint8_t * stream; 
+    const int sizeInBytes;      
+    const int sizeInBits;        
+    int currBytePos;             
+    int nextBitPos;            
+    int numBitsRead;          
+    Code currCode;             
 };
 
-// ========================================================
+
 // Huffman Tree Node:
-// ========================================================
+
 
 constexpr int Nil        = -1;
 constexpr int MaxSymbols = 256;
@@ -213,9 +201,8 @@ struct Node final
     bool isLeaf()  const { return leftChild == Nil && rightChild == Nil; }
 };
 
-// ========================================================
+
 // Huffman encoder class:
-// ========================================================
 
 class Encoder final
 {
@@ -225,25 +212,18 @@ public:
     Encoder(const Encoder &) = delete;
     Encoder & operator = (const Encoder &) = delete;
 
-    // Constructor will start the encoding process,
-    // building the Huffman tree and creating the output stream.
-    // Call getBitStreamWriter() to fetch the results.
+
     Encoder(const std::uint8_t * data, int dataSizeBytes, bool prependTreeToBitStream);
 
     // Find node can be used by a decoder to reconstruct
     // the original data from a bit stream of Huffman codes.
     const Node * findNodeForCode(Code code) const;
-
-    // Get the bit stream generated from the data.
-    // The stream will be prefixed with the Huffman tree codes
-    // if prependTreeToBitStream was set in the constructor.
+    
+    
     const BitStreamWriter & getBitStreamWriter() const;
     BitStreamWriter & getBitStreamWriter();
 
-    // Get the length in bits of the tree data prefixed
-    // to the stream if prependTreeToBitStream was true.
-    // Always rounded to a byte boundary.
-    int getTreePrefixBits() const;
+
 
 private:
 
@@ -257,7 +237,7 @@ private:
         }
     };
 
-    // Queue stores pointers into the nodes[] array below.
+    
     using PQueue = std::priority_queue<Node *, std::vector<Node *>, NodeCmp>;
 
     // Internal helpers:
@@ -318,34 +298,26 @@ private:
     std::array<Code, MaxSymbols> codes;
 };
 
-// ========================================================
-// easyEncode() / easyDecode():
-// ========================================================
 
-// Quick Huffman data compression.
-// Output compressed data is heap allocated with HUFFMAN_MALLOC()
-// and should be later freed with HUFFMAN_MFREE().
+// easyEncode() / easyDecode():
+
+
+
 void easyEncode(const std::uint8_t * uncompressed, int uncompressedSizeBytes,
                 std::uint8_t ** compressed, int * compressedSizeBytes, int * compressedSizeBits);
 
-// Decompress back the output of easyEncode().
-// The uncompressed output buffer is assumed to be big enough to hold the uncompressed data,
-// if it happens to be smaller, the decoder will return a partial output and the return value
-// of this function will be less than uncompressedSizeBytes.
+
 int easyDecode(const std::uint8_t * compressed, int compressedSizeBytes, int compressedSizeBits,
                std::uint8_t * uncompressed, int uncompressedSizeBytes);
 
 } // namespace huffman {}
 
-// ================== End of header file ==================
-#endif // HUFFMAN_HPP
-// ================== End of header file ==================
 
-// ================================================================================================
-//
+#endif // HUFFMAN_HPP
+
+
+
 //                                  Huffman Implementation
-//
-// ================================================================================================
 
 #ifdef HUFFMAN_IMPLEMENTATION
 
@@ -359,9 +331,9 @@ int easyDecode(const std::uint8_t * compressed, int compressedSizeBytes, int com
 namespace huffman
 {
 
-// ========================================================
+
 // Local helpers:
-// ========================================================
+
 
 // Round up to the next power-of-two number, e.g. 37 => 64
 static int nextPowerOfTwo(int num)
